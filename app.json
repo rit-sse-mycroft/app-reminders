@@ -1,0 +1,14 @@
+{
+    "version": "0.0.1",
+    "name": "Reminders",
+    "displayName": "That Reminders App",
+    "instanceId": "reminders1",
+    "capabilities": {
+    	"remind": "0.0.1"
+    },
+    "API": 0,
+    "description": "Reminds you of things",
+    "dependencies": {
+    	"tts": "0.0.1"
+    }
+}
