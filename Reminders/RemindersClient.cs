@@ -13,6 +13,7 @@ namespace Reminders
     class RemindersClient : Client
     {
         private IScheduler scheduler;
+        private string status;
 
         public RemindersClient() : base()
         {
@@ -20,7 +21,7 @@ namespace Reminders
 
             scheduler = schedFact.GetScheduler();
             scheduler.Start();
-
+            status = down;
             Trash30();
         }
 
@@ -43,6 +44,22 @@ namespace Reminders
         {
             Console.WriteLine("Recieved Message " + type);
             InstanceId = obj["instanceId"];
+        }
+
+        protected async override void Response(APP_DEPENDENCY type, dynamic message)
+        {
+            try
+            {
+                if (message["tts"]["text2speech"] == "up" && status == "down")
+                    await SendData("APP_UP", "");
+                else if (message["tts"]["text2speech"] == "down" && status == "up")
+                    await SendData("APP_DOWN", "");
+            }
+            catch
+            {
+
+            }
+
         }
     }
 }

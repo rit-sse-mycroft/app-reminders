@@ -46,8 +46,6 @@ namespace Mycroft.App
 
         protected abstract void Response(APP_MANIFEST_OK type, dynamic message);
         protected abstract void Response(APP_DEPENDENCY type, dynamic message);
-        protected abstract void Response(MSG_QUERY type, dynamic message);
-        protected abstract void Response(MSG_BROADCAST type, dynamic message);
 
 
         private void Response(string badtype, dynamic jsonobj)
