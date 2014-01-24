@@ -21,7 +21,7 @@ namespace Reminders
         }
         protected async void SendTTS(Client client, string phrase)
         {
-            await client.SendJson("MSG_QUERY", new MessageQuery("tts", "do", new
+            await client.SendJson("MSG_QUERY", new MessageQuery("tts", "stream", new
             {
                 text =
                     new object[] {
