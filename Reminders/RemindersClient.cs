@@ -24,6 +24,7 @@ namespace Reminders
             Trash30();
             Crossroads();
             Salsaritas();
+            CtrlAltDeli();
         }
 
         private void Trash30()
@@ -35,7 +36,7 @@ namespace Reminders
             job.JobDataMap.Add("client", this);
 
             ITrigger trigger = TriggerBuilder.Create()
-                .WithIdentity("trash30Trigger")
+                .WithIdentity("trash30")
                 .WithCronSchedule("0 30 10-18 * * *")
                 .Build();
             scheduler.ScheduleJob(job, trigger);
@@ -51,7 +52,7 @@ namespace Reminders
 
             Quartz.Collection.HashSet<ITrigger> set = new Quartz.Collection.HashSet<ITrigger>();
             set.Add(TriggerBuilder.Create()
-                .WithIdentity("crossroadsWeekdayTrigger")
+                .WithIdentity("crossroadsWeekday")
                 .WithCronSchedule("0 40 21 * * MON-THU")
                 .Build());
 
@@ -78,7 +79,7 @@ namespace Reminders
 
             Quartz.Collection.HashSet<ITrigger> set = new Quartz.Collection.HashSet<ITrigger>();
             set.Add(TriggerBuilder.Create()
-                .WithIdentity("salsaritasWeekdayTrigger")
+                .WithIdentity("salsaritasWeekday")
                 .WithCronSchedule("0 40 20 * * MON-THU")
                 .Build());
 
@@ -93,6 +94,29 @@ namespace Reminders
                 .Build());
 
             scheduler.ScheduleJob(job, set, true);
+        }
+
+        private void CtrlAltDeli()
+        {
+            IJobDetail job = JobBuilder.Create<MycroftJob>()
+                .WithIdentity("ctrlAltDeliJob")
+                .UsingJobData("phrase", "Control Alt Deli is closing in 20 minutes")
+                .Build();
+            job.JobDataMap.Add("client", this);
+
+            Quartz.Collection.HashSet<ITrigger> set = new Quartz.Collection.HashSet<ITrigger>();
+            set.Add(TriggerBuilder.Create()
+                .WithIdentity("ctrlAltDeliWeekday")
+                .WithCronSchedule("0 10 18 * * MON-THU")
+                .Build());
+
+            set.Add(TriggerBuilder.Create()
+                .WithIdentity("ctrlAltDeliFriday")
+                .WithCronSchedule("0 40 14 * * FRI")
+                .Build());
+
+            scheduler.ScheduleJob(job, set, true);
+ 
         }
 
         protected override void Response(APP_MANIFEST_OK type, dynamic obj)

@@ -16,7 +16,7 @@ namespace Reminders
             JobDataMap dataMap = context.JobDetail.JobDataMap;
             Client client = (Client) dataMap["client"];
             string phrase = (string) dataMap["phrase"];
-
+            Console.WriteLine(phrase);
             SendTTS(client, phrase);
         }
         protected async void SendTTS(Client client, string phrase)
