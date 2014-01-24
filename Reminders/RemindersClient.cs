@@ -25,6 +25,8 @@ namespace Reminders
             Crossroads();
             Salsaritas();
             CtrlAltDeli();
+            SSEMeeting();
+            
         }
 
         private void Trash30()
@@ -118,6 +120,22 @@ namespace Reminders
             scheduler.ScheduleJob(job, set, true);
  
         }
+
+        private void SSEMeeting()
+        {
+            IJobDetail job = JobBuilder.Create<MycroftJob>()
+                .WithIdentity("sseMeetingJob")
+                .UsingJobData("phrase", "The SSE Meeting is in 10 minutes")
+                .Build();
+            job.JobDataMap.Add("client", this);
+
+            ITrigger trigger = TriggerBuilder.Create()
+                .WithIdentity("sseMeeting")
+                .WithCronSchedule("0 50 16 * * FRI")
+                .Build();
+
+            scheduler.ScheduleJob(job, trigger);
+        } 
 
         protected override void Response(APP_MANIFEST_OK type, dynamic obj)
         {
