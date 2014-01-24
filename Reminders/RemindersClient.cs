@@ -20,8 +20,7 @@ namespace Reminders
             ISchedulerFactory schedFact = new StdSchedulerFactory();
 
             scheduler = schedFact.GetScheduler();
-            scheduler.Start();
-            status = down;
+            status = "down";
             Trash30();
         }
 
@@ -48,18 +47,21 @@ namespace Reminders
 
         protected async override void Response(APP_DEPENDENCY type, dynamic message)
         {
-            try
+            if(message["tts"].ContainsKey("text2speech"))
             {
                 if (message["tts"]["text2speech"] == "up" && status == "down")
+                {
                     await SendData("APP_UP", "");
+                    status = "up";
+                    scheduler.Start();
+                }
                 else if (message["tts"]["text2speech"] == "down" && status == "up")
+                {
                     await SendData("APP_DOWN", "");
+                    status = "down";
+                    scheduler.Standby();
+                }
             }
-            catch
-            {
-
-            }
-
         }
     }
 }
