@@ -23,13 +23,13 @@ namespace Reminders
         {
             await client.SendJson("MSG_QUERY", new MessageQuery("tts", "stream", new
             {
-                text =
-                    new object[] {
-                        new {
+                text = new object[] {
+                    new {
                             phrase = phrase, 
                             delay= 0
                         }
-                    }
+                    },
+                targetSpeaker = "speakers"
             }, new string[] { }, 30));
         }
     }

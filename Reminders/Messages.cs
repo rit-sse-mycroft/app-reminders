@@ -8,12 +8,12 @@ namespace Mycroft.App.Message
 {
     public class MessageQuery
     {
-        private string capability;
-        private string action;
-        private object data;
-        private string[] instanceId;
-        private int priority;
-        private Guid id;
+        public string capability;
+        public string action;
+        public object data;
+        public string[] instanceId;
+        public int priority;
+        public Guid id;
 
         public MessageQuery(string capability, string action, object data, string[] instanceId, int priority )
         {

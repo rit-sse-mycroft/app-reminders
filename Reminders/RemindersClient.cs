@@ -21,6 +21,7 @@ namespace Reminders
 
             scheduler = schedFact.GetScheduler();
             status = "down";
+
             Trash30();
             Crossroads();
             Salsaritas();
@@ -39,7 +40,7 @@ namespace Reminders
 
             ITrigger trigger = TriggerBuilder.Create()
                 .WithIdentity("trash30")
-                .WithCronSchedule("0 30 10-18 * * *")
+                .WithCronSchedule("0 30 10-18 * * ?")
                 .Build();
             scheduler.ScheduleJob(job, trigger);
         }
@@ -55,17 +56,17 @@ namespace Reminders
             Quartz.Collection.HashSet<ITrigger> set = new Quartz.Collection.HashSet<ITrigger>();
             set.Add(TriggerBuilder.Create()
                 .WithIdentity("crossroadsWeekday")
-                .WithCronSchedule("0 40 21 * * MON-THU")
+                .WithCronSchedule("0 40 21 ? * MON-THU")
                 .Build());
 
             set.Add(TriggerBuilder.Create()
                 .WithIdentity("crossroadsFriday")
-                .WithCronSchedule("0 40 17 * * FRI")
+                .WithCronSchedule("0 40 17 ? * FRI")
                 .Build());
 
             set.Add(TriggerBuilder.Create()
                 .WithIdentity("crossroadsSunday")
-                .WithCronSchedule("0 40 19 * * SUN")
+                .WithCronSchedule("0 40 19 ? * SUN")
                 .Build());
 
             scheduler.ScheduleJob(job, set, true);
@@ -82,17 +83,17 @@ namespace Reminders
             Quartz.Collection.HashSet<ITrigger> set = new Quartz.Collection.HashSet<ITrigger>();
             set.Add(TriggerBuilder.Create()
                 .WithIdentity("salsaritasWeekday")
-                .WithCronSchedule("0 40 20 * * MON-THU")
+                .WithCronSchedule("0 40 20 ? * MON-THU")
                 .Build());
 
             set.Add(TriggerBuilder.Create()
                 .WithIdentity("salsaritasFriday")
-                .WithCronSchedule("0 40 19 * * FRI")
+                .WithCronSchedule("0 40 19 ? * FRI")
                 .Build());
 
             set.Add(TriggerBuilder.Create()
                 .WithIdentity("salsaritasSaturday")
-                .WithCronSchedule("0 40 19 * * SAT")
+                .WithCronSchedule("0 40 19 ? * SAT")
                 .Build());
 
             scheduler.ScheduleJob(job, set, true);
@@ -109,12 +110,12 @@ namespace Reminders
             Quartz.Collection.HashSet<ITrigger> set = new Quartz.Collection.HashSet<ITrigger>();
             set.Add(TriggerBuilder.Create()
                 .WithIdentity("ctrlAltDeliWeekday")
-                .WithCronSchedule("0 10 18 * * MON-THU")
+                .WithCronSchedule("0 10 18 ? * MON-THU")
                 .Build());
 
             set.Add(TriggerBuilder.Create()
                 .WithIdentity("ctrlAltDeliFriday")
-                .WithCronSchedule("0 40 14 * * FRI")
+                .WithCronSchedule("0 40 14 ? * FRI")
                 .Build());
 
             scheduler.ScheduleJob(job, set, true);
@@ -131,7 +132,7 @@ namespace Reminders
 
             ITrigger trigger = TriggerBuilder.Create()
                 .WithIdentity("sseMeeting")
-                .WithCronSchedule("0 50 16 * * FRI")
+                .WithCronSchedule("0 50 16 ? * FRI")
                 .Build();
 
             scheduler.ScheduleJob(job, trigger);
