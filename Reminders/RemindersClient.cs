@@ -1,4 +1,5 @@
 ﻿using Mycroft.App;
+using Mycroft.App.Message;
 using Quartz;
 using Quartz.Impl;
 using System;
@@ -36,6 +37,12 @@ namespace Reminders
                 .WithCronSchedule("30 10-18 * * *")
                 .Build();
             scheduler.ScheduleJob(job, trigger);
+        }
+
+        protected override void Response(APP_MANIFEST_OK type, dynamic obj)
+        {
+            Console.WriteLine("Recieved Message " + type);
+            InstanceId = obj["instanceId"];
         }
     }
 }
