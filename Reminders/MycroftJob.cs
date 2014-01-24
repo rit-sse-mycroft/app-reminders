@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Reminders
 {
-    public abstract class MycroftJob : IJob
+    public class MycroftJob : IJob
     {
         public void Execute(IJobExecutionContext context)
         {
@@ -26,7 +26,7 @@ namespace Reminders
                 text =
                     new object[] {
                         new {
-                            phrase = phrase , 
+                            phrase = phrase, 
                             delay= 0
                         }
                     }
