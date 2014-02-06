@@ -10,12 +10,19 @@ using System.Threading.Tasks;
 
 namespace Reminders
 {
+    /// <summary>
+    /// The reminders application
+    /// </summary>
     class RemindersClient : Client
     {
         private IScheduler scheduler;
         private string status;
 
-        public RemindersClient() : base()
+        /// <summary>
+        /// Constructor for the reminders client
+        /// </summary>
+        /// <param name="manifest">The path to the app manifest</param>
+        public RemindersClient(string manifest) : base(manifest)
         {
             ISchedulerFactory schedFact = new StdSchedulerFactory();
 
@@ -27,9 +34,16 @@ namespace Reminders
             Salsaritas();
             CtrlAltDeli();
             SSEMeeting();
+
+            handler.On("APP_MANIFEST_OK", AppManifestOk);
+            handler.On("APP_DEPENDENCY", AppDependency);
             
         }
 
+        #region Reminders
+        /// <summary>
+        /// Reminder for trash 30
+        /// </summary>
         private void Trash30()
         {
             IJobDetail job = JobBuilder.Create<MycroftJob>()
@@ -44,7 +58,9 @@ namespace Reminders
                 .Build();
             scheduler.ScheduleJob(job, trigger);
         }
-
+        /// <summary>
+        /// Reminder for crossroads
+        /// </summary>
         private void Crossroads()
         {
             IJobDetail job = JobBuilder.Create<MycroftJob>()
@@ -72,6 +88,9 @@ namespace Reminders
             scheduler.ScheduleJob(job, set, true);
         }
 
+        /// <summary>
+        /// Reminder for Salsaritas
+        /// </summary>
         private void Salsaritas()
         {
             IJobDetail job = JobBuilder.Create<MycroftJob>()
@@ -99,6 +118,9 @@ namespace Reminders
             scheduler.ScheduleJob(job, set, true);
         }
 
+        /// <summary>
+        /// Reminder for Ctrl Alt Deli
+        /// </summary>
         private void CtrlAltDeli()
         {
             IJobDetail job = JobBuilder.Create<MycroftJob>()
@@ -122,6 +144,9 @@ namespace Reminders
  
         }
 
+        /// <summary>
+        /// Reminder for the SSE Meeting
+        /// </summary>
         private void SSEMeeting()
         {
             IJobDetail job = JobBuilder.Create<MycroftJob>()
@@ -136,31 +161,41 @@ namespace Reminders
                 .Build();
 
             scheduler.ScheduleJob(job, trigger);
-        } 
+        }
+        #endregion
 
-        protected override void Response(APP_MANIFEST_OK type, dynamic obj)
+        #region Message Helpers
+        /// <summary>
+        /// Called when app manifest okay is received
+        /// </summary>
+        /// <param name="obj">The message received</param>
+        protected void AppManifestOk(dynamic obj)
         {
-            Console.WriteLine("Recieved Message " + type);
             InstanceId = obj["instanceId"];
         }
 
-        protected async override void Response(APP_DEPENDENCY type, dynamic message)
+        /// <summary>
+        /// Called when APP_DEPENDENCY is received
+        /// </summary>
+        /// <param name="message">The message received</param>
+        protected async void AppDependency(dynamic message)
         {
             if(message["tts"].ContainsKey("text2speech"))
             {
                 if (message["tts"]["text2speech"] == "up" && status == "down")
                 {
-                    await SendData("APP_UP", "");
+                    await Up();
                     status = "up";
                     scheduler.Start();
                 }
                 else if (message["tts"]["text2speech"] == "down" && status == "up")
                 {
-                    await SendData("APP_DOWN", "");
+                    await Down();
                     status = "down";
                     scheduler.Standby();
                 }
             }
         }
+        #endregion
     }
 }

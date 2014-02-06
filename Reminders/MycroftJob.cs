@@ -9,8 +9,15 @@ using System.Threading.Tasks;
 
 namespace Reminders
 {
+    /// <summary>
+    /// The Mycroft Job class
+    /// </summary>
     public class MycroftJob : IJob
     {
+        /// <summary>
+        /// Executes a job
+        /// </summary>
+        /// <param name="context">THe job context</param>
         public void Execute(IJobExecutionContext context)
         {
             JobDataMap dataMap = context.JobDetail.JobDataMap;
@@ -19,9 +26,14 @@ namespace Reminders
             Console.WriteLine(phrase);
             SendTTS(client, phrase);
         }
+        /// <summary>
+        /// Sends a message to TTS
+        /// </summary>
+        /// <param name="client">The Reminders client</param>
+        /// <param name="phrase">the phrase to say</param>
         protected async void SendTTS(Client client, string phrase)
         {
-            await client.SendJson("MSG_QUERY", new MessageQuery("tts", "stream", new
+            var data =  new
             {
                 text = new object[] {
                     new {
@@ -30,7 +42,8 @@ namespace Reminders
                         }
                     },
                 targetSpeaker = "speakers"
-            }, new string[] { }, 30));
+            };
+            await client.Query("tts", "stream", data);
         }
     }
 }

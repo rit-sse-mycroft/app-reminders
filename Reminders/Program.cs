@@ -15,7 +15,7 @@ namespace Reminders
                 Console.WriteLine("Expected arguments in the form host port");
                 return;
             }
-            var server = new RemindersClient();
+            var server = new RemindersClient("app.json");
             server.Connect(args[0], args[1]);
         }
     }

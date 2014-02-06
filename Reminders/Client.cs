@@ -7,12 +7,15 @@ using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Mycroft.App.Message;
 using System.Web.Script.Serialization;
-using System.Diagnostics; //This can be used with dynamic, unlike the contract
+using System.Diagnostics;
 
 namespace Mycroft.App
 {
+    /// <summary>
+    /// The client abstract class. Any application made will inherit from
+    /// this class.
+    /// </summary>
     public abstract class Client
     {
         private string manifest;
@@ -20,140 +23,114 @@ namespace Mycroft.App
         private Stream stream;
         private JavaScriptSerializer ser = new JavaScriptSerializer();
         private StreamReader reader;
+        protected MessageEventHandler handler;
         public string InstanceId;
 
-        public Client()
+        /// <summary>
+        /// Constructor for a client
+        /// </summary>
+        public Client(string manifestPath)
         {
-            var assembly = Assembly.GetExecutingAssembly();
-            var textStreamReader = new StreamReader("app.json");
+            var textStreamReader = new StreamReader(manifestPath);
             manifest = textStreamReader.ReadToEnd();
             var jsobj = ser.Deserialize<dynamic>(manifest);
             InstanceId = jsobj["instanceId"];
+            handler = new MessageEventHandler();
 
         }
+
+        #region Mycroft Connection
+        /// <summary>
+        /// Connects to Mycroft
+        /// </summary>
+        /// <param name="hostname">The hostname to connect to</param>
+        /// <param name="port">The port to connect to</param>
         public async void Connect(string hostname, string port)
         {
             cli = new TcpClient(hostname, Convert.ToInt32(port));
+            Logger.GetInstance().Info("Connected to Mycroft");
             stream = cli.GetStream();
             reader = new StreamReader(stream);
-            await StartListening();
+            try
+            {
+                await StartListening();
+            }
+            finally
+            {
+                CloseConnection();
+            }
         }
 
-        private void Response(MessageType type, dynamic jsonobj)
-        {
-            return;
-        }
-
-        protected abstract void Response(APP_MANIFEST_OK type, dynamic message);
-        protected abstract void Response(APP_DEPENDENCY type, dynamic message);
-
-
-        private void Response(string badtype, dynamic jsonobj)
-        {
-            //This probably doesn't need to throw an error... a log might be sufficient.
-            throw new ArgumentException("Invalid message type " + badtype + " recieved!");
-        }
-
+        /// <summary>
+        /// Start recieving messages from Mycroft
+        /// </summary>
+        /// <returns>An Awaitable Task</returns>
         public async Task StartListening()
         {
             await SendManifest();
+            handler.Handle("CONNECT");
             while (true)
             {
                 dynamic obj = await ReadJson();
                 string type = obj.type;
                 dynamic message = obj.message;
-
-                switch (type)
-                {
-                    case "APP_MANIFEST":
-                        {
-                            Response(new APP_MANIFEST(), message);
-                            break;
-                        }
-                    case "APP_MANIFEST_OK":
-                        {
-                            Response(new APP_MANIFEST_OK(), message);
-                            break;
-                        }
-                    case "APP_MANIFEST_FAIL":
-                        {
-                            Response(new APP_MANIFEST_FAIL(), message);
-                            break;
-                        }
-                    case "APP_DEPENDENCY":
-                        {
-                            Response(new APP_DEPENDENCY(), message);
-                            break;
-                        }
-                    case "MSG_QUERY":
-                        {
-                            Response(new MSG_QUERY(), message);
-                            break;
-                        }
-                    case "MSG_QUERY_SUCCESS":
-                        {
-                            Response(new MSG_QUERY_SUCCESS(), message);
-                            break;
-                        }
-                    case "MSG_QUERY_FAIL":
-                        {
-                            Response(new MSG_QUERY_FAIL(), message);
-                            break;
-                        }
-                    case "MSG_BROADCAST":
-                        {
-                            Response(new MSG_BROADCAST(), message);
-                            break;
-                        }
-                    case "MSG_BROADCAST_SUCCESS":
-                        {
-                            Response(new MSG_BROADCAST_SUCCESS(), message);
-                            break;
-                        }
-                    case "MSG_BROADCAST_FAIL":
-                        {
-                            Response(new MSG_BROADCAST_FAIL(), message);
-                            break;
-                        }
-                    default:
-                        {
-                            Response(type, message);
-                            break;
-                        }
-                }
+                handler.Handle(type, message);
             }
         }
 
 
+        /// <summary>
+        /// Close the connection from the Mycroft server
+        /// </summary>
         public async void CloseConnection()
         {
-            await SendData("APP_DOWN", "");
+            handler.Handle("END");
+            await SendData("APP_DOWN");
+            Logger.GetInstance().Info("Disconnected from Mycroft");
             cli.Close();
         }
-
-        public async Task SendData(string type, string data)
+        #endregion
+        #region Message Sending and Recieving
+        /// <summary>
+        /// Send a message to Mycroft where data is a string. Used for sending
+        /// Messages with no body (and app manifest because it's already a string)
+        /// </summary>
+        /// <param name="type">The type of message being sent</param>
+        /// <param name="data">The message string that you are sending</param>
+        /// <returns>A task</returns>
+        private async Task SendData(string type, string data = "")
         {
             string msg = type + " " + data;
             msg = msg.Trim();
             msg = Encoding.UTF8.GetByteCount(msg) + "\n" + msg;
+            Logger.GetInstance().Info("Sending Message " + type);
+            Logger.GetInstance().Debug(msg);
             stream.Write(Encoding.UTF8.GetBytes(msg), 0, (int)msg.Length);
         }
 
-        public async Task SendJson(string type, Object o)
+        /// <summary>
+        /// Sends a message to Mycroft where data is an object. Used for sending messages
+        /// that actually have a body
+        /// </summary>
+        /// <param name="type">The type of message being sent</param>
+        /// <param name="data">The json object being sent</param>
+        /// <returns>A task</returns>
+        private async Task SendJson(string type, Object data)
         {
-            string obj = ser.Serialize(o);
+            string obj = ser.Serialize(data);
             string msg = type + " " + obj;
             msg = msg.Trim();
             msg = Encoding.UTF8.GetByteCount(msg) + "\n" + msg;
+            Logger.GetInstance().Info("Sending Message " + type);
+            Logger.GetInstance().Debug(msg);
             stream.Write(Encoding.UTF8.GetBytes(msg), 0, (int)msg.Length);
         }
 
-        public async Task SendManifest()
-        {
-            await SendData("APP_MANIFEST", manifest);
-        }
-
-        public async Task<Object> ReadJson()
+        /// <summary>
+        /// Reads in json from the Mycroft server.
+        /// </summary>
+        /// <returns>An object with the type and message received</returns>
+        private async Task<Object> ReadJson()
         {
             //Size of message in bytes
             string len = reader.ReadLine();
@@ -176,6 +153,8 @@ namespace Mycroft.App
 
             //Convert the json string to an object
             var jsonstr = str.TrimStart(match.Value.ToCharArray());
+            Logger.GetInstance().Info("Got Message " + match.Value);
+            Logger.GetInstance().Debug(jsonstr);
             if (jsonstr.Trim().Length == 0)
             {
                 return new
@@ -193,6 +172,116 @@ namespace Mycroft.App
                 message = obj
             };
         }
+        #endregion
+        #region Message Helpers
+        /// <summary>
+        /// Sends APP_MANIFEST to Mycroft
+        /// </summary>
+        /// <returns>A task</returns>
+        public async Task SendManifest()
+        {
+            SendData("APP_MANIFEST", manifest);
+        }
 
+        /// <summary>
+        /// Sends APP_UP to Mycroft
+        /// </summary>
+        /// <returns>A task</returns>
+        public async Task Up()
+        {
+            SendData("APP_UP");
+        }
+
+        /// <summary>
+        /// Sends APP_DOWN to Mycroft
+        /// </summary>
+        /// <returns>A task</returns>
+        public async Task Down()
+        {
+            SendData("APP_DOWN");
+        }
+
+        /// <summary>
+        /// Sends APP_IN_USE to Mycroft
+        /// </summary>
+        /// <param name="priority">the priority of the app</param>
+        /// <returns>A task</returns>
+        public async Task InUse(int priority)
+        {
+            SendJson("APP_IN_USE", new { priority = priority });
+        }
+
+        /// <summary>
+        /// Sends MSG_BROADCAST to Mycroft
+        /// </summary>
+        /// <param name="content">The content object of the message</param>
+        /// <returns>A task</returns>
+        public async Task Broadcast(dynamic content)
+        {
+            var broadcast = new
+            {
+                id = Guid.NewGuid(),
+                content = content
+            };
+            SendJson("MSG_BROADCAST", broadcast);
+        }
+
+        /// <summary>
+        /// Sends MSG_QUERY to Mycroft
+        /// </summary>
+        /// <param name="capability">The capability</param>
+        /// <param name="action">The action</param>
+        /// <param name="data">The data of the message</param>
+        /// <param name="instanceId">An array of instance ids. Defaults to null</param>
+        /// <param name="priority">the priority. Defaults to 30</param>
+        /// <returns>A task</returns>
+        public async Task Query(string capability, string action, dynamic data, string[] instanceId = null, int priority = 30)
+        {
+            if (instanceId == null)
+                instanceId = new string[0];
+            var query = new
+            {
+                id = Guid.NewGuid(),
+                capability = capability,
+                action = action,
+                data = data,
+                instanceId = instanceId,
+                priority = priority
+            };
+            SendJson("MSG_QUERY", query);
+        }
+
+        /// <summary>
+        /// Sends MSG_QUERY_SUCCESS to Mycroft
+        /// </summary>
+        /// <param name="id">The id of the message being responded to</param>
+        /// <param name="ret">The content of the message</param>
+        /// <returns>A task</returns>
+        public async Task QuerySuccess(string id, dynamic ret)
+        {
+            var querySuccess = new
+            {
+                id = id,
+                ret = ret
+            };
+            SendJson("MSG_QUERY_SUCCESS", querySuccess);
+        }
+
+        /// <summary>
+        /// Sends MSG_QUERY_FAIL to Mycroft
+        /// </summary>
+        /// <param name="id">The id of the message being responded to</param>
+        /// <param name="message">The error message</param>
+        /// <returns>A task</returns>
+        public async Task QueryFail(string id, string message)
+        {
+            var queryFail = new
+            {
+                id = id,
+                message = message
+            };
+            SendJson("MSG_QUERRY_FAIL", queryFail);
+        }
+        #endregion
     }
 }
