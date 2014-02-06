@@ -1,5 +1,4 @@
 ﻿using Mycroft.App;
-using Mycroft.App.Message;
 using Quartz;
 using Quartz.Impl;
 using System;

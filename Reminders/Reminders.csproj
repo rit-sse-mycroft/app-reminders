@@ -51,7 +51,6 @@
     <Compile Include="Client.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="MycroftJob.cs" />
-    <Compile Include="Messages.cs" />
     <Compile Include="MessageEventHandler.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
